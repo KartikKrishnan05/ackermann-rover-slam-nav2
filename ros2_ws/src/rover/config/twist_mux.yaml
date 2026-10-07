@@ -1,0 +1,49 @@
+# -----------------------------------------------------------------------------
+# Twist Mux Configuration
+# -----------------------------------------------------------------------------
+# This file configures the 'twist_mux' node, which acts as a traffic cop for
+# velocity commands. It listens to multiple input topics (e.g., from Nav2 or
+# a Joystick) and publishes the one with the highest priority to the robot.
+#
+# Hierarchy logic:
+# - Teleop (Priority 100) > Navigation (Priority 10)
+# - If the pilot touches the joystick, the robot stops listening to Nav2 immediately.
+# -----------------------------------------------------------------------------
+
+twist_mux:
+  ros__parameters:
+    # -----------------------------------------------------------------
+    # General Parameters
+    # -----------------------------------------------------------------
+    # Sync with simulation clock (Set 'true' for Gazebo, 'false' for Hardware)
+    # Note: This is often overridden by the launch file argument.
+    use_sim_time: true
+
+    # Input Message Type:
+    # false = geometry_msgs/Twist (Unstamped) - The standard for teleop_twist_keyboard
+    # true  = geometry_msgs/TwistStamped      - Required if sources provide timestamps
+    #
+    # In this pipeline, we accept Unstamped messages here, and then the
+    # 'twist_stamper' node adds the timestamp downstream before the controller.
+    use_stamped: false
+
+    # -----------------------------------------------------------------
+    # Input Topics (Sources)
+    # -----------------------------------------------------------------
+    topics:
+      # 1. Navigation Stack (Nav2)
+      #    Autonomous driving commands.
+      #    Lowest priority: This is the default behavior when no human is interfering.
+      navigation:
+        topic: cmd_vel_nav
+        timeout: 0.5        # Safety: Stop if Nav2 crashes/silences for 0.5s
+        priority: 10
+
+      # 2. Teleoperation (Joystick / Keyboard)
+      #    Manual control commands.
+      #    High priority: Instantly overrides autonomous navigation.
+      #    This acts as a "Dead Man's Switch" mechanism effectively.
+      teleop:
+        topic: cmd_vel
+        timeout: 0.5        # Safety: Stop if connection lost for 0.5s
+        priority: 100

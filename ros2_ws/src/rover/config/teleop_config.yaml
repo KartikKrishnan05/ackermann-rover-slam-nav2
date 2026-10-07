@@ -1,0 +1,16 @@
+/**:
+  ros__parameters:
+    # Limits reverse power to 40% of the maximum reverse PWM range.
+    backward_limit: 0.4
+    
+    # Limits forward power to 65% of the maximum forward PWM range.
+    # Useful for indoor testing or beginners to prevent high-speed crashes.
+    forward_limit: 0.65
+    
+    # The maximum raw integer value sent by a standard Linux joystick (Int16).
+    # This is used to normalize the stick position to a 0.0 to 1.0 scale.
+    max_joystick_value: 32767.0
+    
+    # The Linux file path for the physical controller. 
+    # js0 is typically the first USB or Bluetooth controller plugged in.
+    joy_dev: "/dev/input/js0"

@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:property name="chassis_mass" value="3.0"/>
+    <xacro:property name="wheel_mass" value="0.2"/>
+    <xacro:property name="steering_mass" value="0.1"/>
+    
+    <xacro:property name="wheel_separation_width" value="0.2"/>
+    <xacro:property name="wheel_base_length" value="0.312"/>
+    
+    <link name="base_footprint"/>
+
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="base_link">
+        <visual>
+            <origin xyz="0 0 -0.0115" rpy="-0.018 0 -1.5707"/>
+            <geometry>
+                <mesh filename="package://rover/meshes/MainBody.dae"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="-0.03 0 0.03" rpy="0 0 0"/>
+            <geometry>
+                <box size=".45 .1 .08"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="${chassis_mass}"/>
+            <inertia ixx="0.0054" ixy="0" ixz="0" iyy="0.0252" iyz="0" izz="0.0252"/>
+        </inertial>
+    </link>
+
+    <xacro:macro name="wheel" params="prefix parent x_pos y_pos flip_visual">
+        <link name="${prefix}_wheel">
+            <visual>
+                <origin xyz="0 -0.02 0" rpy="0 0 ${pi}"/>
+                <geometry>
+                    <mesh filename="package://rover/meshes/Wheel.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="-1.5707 0 0"/>
+                <geometry>
+                    <cylinder length="0.03" radius="0.06"/>
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="${wheel_mass}"/>
+                <inertia ixx="0.00024" ixy="0" ixz="0" iyy="0.00036" iyz="0" izz="0.00024"/>
+            </inertial>
+        </link>
+
+        <joint name="${prefix}_wheel_joint" type="revolute">
+            <parent link="${parent}"/>
+            <child link="${prefix}_wheel"/>
+            <origin xyz="${x_pos} ${y_pos} 0" rpy="0 0 0"/>
+            <axis xyz="0 1 0"/>
+            <limit lower="-1e16" upper="1e16" effort="100" velocity="20"/>
+        </joint>
+    </xacro:macro>
+
+    <xacro:macro name="steering_link" params="prefix y_pos">
+        <link name="${prefix}_steering">
+            <inertial>
+                <mass value="${steering_mass}"/>
+                <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+            </inertial>
+        </link>
+
+        <joint name="${prefix}_steering_joint" type="revolute">
+            <parent link="base_link"/>
+            <child link="${prefix}_steering"/>
+            <origin xyz="0.120 ${y_pos} 0" rpy="0 0 0"/>
+            <axis xyz="0 0 1"/>
+            <limit lower="-0.52" upper="0.52" effort="1e6" velocity="10"/>
+        </joint>
+    </xacro:macro>
+
+    <xacro:wheel prefix="rear_right" parent="base_link" x_pos="-0.192" y_pos="-0.1" flip_visual="false"/>
+    <xacro:wheel prefix="rear_left" parent="base_link" x_pos="-0.192" y_pos="0.1" flip_visual="false"/>
+
+    <xacro:steering_link prefix="front_right" y_pos="-0.1"/>
+    <xacro:steering_link prefix="front_left" y_pos="0.1"/>
+
+    <xacro:wheel prefix="front_right" parent="front_right_steering" x_pos="0" y_pos="0" flip_visual="false"/>
+    <xacro:wheel prefix="front_left" parent="front_left_steering" x_pos="0" y_pos="0" flip_visual="false"/>
+
+</robot>

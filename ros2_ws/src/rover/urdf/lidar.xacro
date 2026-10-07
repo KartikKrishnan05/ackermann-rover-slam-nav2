@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="lidar_sensor" params="parent_link x y z">
+        
+        <joint name="lidar_joint" type="fixed">
+            <parent link="${parent_link}"/>
+            <child link="lidar_link"/>
+            <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
+        </joint>
+
+        <link name="lidar_link">
+            <inertial>
+                <origin xyz="0 0 0.0435" rpy="0 0 0"/>
+                <mass value="0.37"/>
+                <inertia ixx="0.000344" ixy="0" ixz="0" iyy="0.000344" iyz="0" izz="0.000222"/>
+            </inertial>
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <mesh filename="package://rover/meshes/lidar_2d_v2.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                 <origin xyz="0 0 0.0205" rpy="0 0 0"/>
+                 <geometry><box size="0.06 0.06 0.041"/></geometry>
+            </collision>
+        </link>
+
+        <gazebo reference="lidar_link">
+         <sensor name="lidar_2d_v2" type="gpu_lidar">
+            <pose>0 0 0 0 0 0</pose>
+            <always_on>true</always_on>
+            <visualize>true</visualize>
+            <update_rate>10</update_rate>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>360</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-3.14</min_angle>
+                        <max_angle>3.14</max_angle>
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.3</min>
+                    <max>12</max>
+                </range>
+            </ray>
+            
+            <frame_id>lidar_link</frame_id>
+            <topic>scan</topic> 
+         </sensor>
+        </gazebo>
+    </xacro:macro>
+</robot>

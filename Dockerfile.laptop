@@ -1,0 +1,27 @@
+FROM osrf/ros:jazzy-desktop-full
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install modern Mesa drivers
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-dri \
+    libgl1 \
+    libglx-mesa0 \
+    libosmesa6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# 1. Remove the existing user with UID 1000 to avoid conflicts
+# 2. Create the dockeruser with UID 1000
+ARG USER_ID=1000
+RUN userdel -r $(id -un 1000) || true && \
+    useradd -m -u ${USER_ID} -s /bin/bash dockeruser
+
+USER dockeruser
+WORKDIR /home/dockeruser
+
+# Setup ROS environment
+RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc && \
+    echo "export ROS_DOMAIN_ID=0" >> ~/.bashrc && \
+
+CMD ["bash"]

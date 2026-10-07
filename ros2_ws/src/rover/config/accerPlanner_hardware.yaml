@@ -1,0 +1,456 @@
+amcl:
+  ros__parameters:
+    use_sim_time: False
+    set_initial_pose: false
+
+    # ── ODOMETRY NOISE MODEL ─────────────────────────────────────────────────
+    # These 5 values describe how noisy your wheel odometry is.
+    # They are multipliers: higher = "my odometry is less trustworthy".
+    # If your robot slips a lot or has cheap encoders, raise these values.
+    # If your odometry is very accurate, lower them (e.g. 0.05–0.1).
+    alpha1: 0.2   # How much ROTATIONAL error is caused by ROTATING (e.g. turning in place drifts)
+    alpha2: 0.2   # How much ROTATIONAL error is caused by MOVING FORWARD (e.g. going straight but drifting sideways)
+    alpha3: 0.2   # How much TRANSLATIONAL error is caused by MOVING FORWARD (e.g. wheel slip)
+    alpha4: 0.2   # How much TRANSLATIONAL error is caused by ROTATING (e.g. turning causes forward/back drift)
+    alpha5: 0.2   # Translational error from sideways motion — only relevant for omnidirectional robots, ignored here
+
+    base_frame_id: "base_link"   # The TF frame attached to the center of the robot body
+
+    # ── BEAM SKIPPING (ignore outlier laser readings) ────────────────────────
+    # Useful when the laser occasionally returns garbage readings (e.g. glass, mirrors).
+    # Only active when do_beamskip: true.
+    beam_skip_distance: 0.5        # If a beam disagrees with the map by more than 0.5m, it's a candidate for skipping
+    beam_skip_error_threshold: 0.9 # If 90% of beams in a scan are bad, don't skip any — the whole scan might just be wrong
+    beam_skip_threshold: 0.3       # Skip a beam only if at least 30% of all beams are also bad (avoids skipping valid data)
+    do_beamskip: false             # Beam skipping is OFF — all laser beams are used as-is
+
+    global_frame_id: "map"         # The fixed TF frame representing the map (never moves)
+    lambda_short: 0.1              # Controls how quickly unexpected SHORT laser readings (e.g. a person walking by) are penalized — higher = penalize more sharply
+
+    # ── LASER RANGE LIMITS ───────────────────────────────────────────────────
+    laser_likelihood_max_dist: 3.0 # When comparing laser hits to the map, only look within 3.0m of expected obstacle — farther hits are ignored as noise
+    laser_max_range: 100.0         # Ignore laser readings beyond 100m (effectively means "use all readings")
+    laser_min_range: -1.0          # Ignore laser readings closer than this; -1.0 means "no minimum, use everything"
+    laser_model_type: "likelihood_field" # Localization method: compares laser endpoints to nearest obstacle in map (faster and more robust than beam model)
+
+    # ── PARTICLE FILTER SETTINGS ─────────────────────────────────────────────
+    # AMCL represents the robot's possible positions as a cloud of "particles".
+    # More particles = more accurate but uses more CPU.
+    max_beams: 120        # Use at most 120 evenly-spaced laser beams per update (reduces CPU load)
+    max_particles: 2000  # Maximum number of particles — used when the robot is lost or uncertain
+    min_particles: 500   # Minimum number of particles — used when the robot is confident of its position
+
+    odom_frame_id: "odom"  # TF frame published by wheel odometry (moves relative to map as odometry drifts)
+
+    pf_err: 0.05  # Target accuracy of the particle filter — the filter tries to keep position error below 5cm
+    pf_z: 0.99    # Confidence level for the above error bound — "99% of the time error is below pf_err"
+
+    # ── RECOVERY / KIDNAPPED ROBOT ───────────────────────────────────────────
+    # If the robot gets "kidnapped" (picked up and moved), these help it recover.
+    # Set both to 0 to disable — the filter will NOT add random particles when lost.
+    recovery_alpha_fast: 0.0  # Fast decay rate for detecting sudden localization failure (0 = disabled)
+    recovery_alpha_slow: 0.0  # Slow decay rate used as a baseline comparison (0 = disabled)
+
+    resample_interval: 1  # Resample the particle cloud every 1 filter update (every time the robot moves enough)
+
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"  # Robot moves with left/right wheels only — cannot slide sideways
+
+    save_pose_rate: 0.5  # Save the estimated robot pose to the parameter server 2x per second — allows re-use on next startup
+
+    sigma_hit: 0.2        # Expected laser measurement noise (standard deviation) — 0.2m means ±20cm is considered a "good" hit
+    tf_broadcast: true    # AMCL will publish the map → odom transform so other nodes know where the robot is on the map
+    transform_tolerance: 1.0  # Accept TF transforms up to 1.0 second old before rejecting as stale
+
+    update_min_a: 0.5   # Robot must rotate at least 0.2 radians (~11°) before running a filter update
+    update_min_d: 0.3   # Robot must move at least 0.25m before running a filter update (prevents updates while standing still)
+
+    # ── LASER SENSOR MODEL WEIGHTS ───────────────────────────────────────────
+    # These describe what proportion of laser readings fall into each category.
+    # All four must sum to exactly 1.0.
+    z_hit: 0.5    # 50% of readings are expected to be real hits on mapped obstacles
+    z_max: 0.05   # 5% of readings are expected to be max-range returns (no obstacle detected)
+    z_rand: 0.5   # 50% of readings are treated as random noise (very high — good for cluttered or dynamic environments)
+    z_short: 0.05 # 5% of readings are unexpectedly short (caused by people, glass, or unmapped objects)
+
+    scan_topic: /scan  # ROS topic where laser scan messages are published
+
+
+bt_navigator:
+  ros__parameters:
+    use_sim_time: False
+    global_frame: map          # Fixed reference frame for navigation goals
+    robot_base_frame: base_link # Frame at the center of the robot
+    odom_topic: /odom           # ROS topic for wheel odometry messages
+    bt_loop_duration: 10        # The behavior tree "ticks" (re-evaluates) every 10ms — higher = more responsive but more CPU
+    default_server_timeout: 20  # If a navigation action server doesn't respond within 20 seconds, treat it as failed
+
+
+bt_navigator_navigate_through_poses_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False
+
+bt_navigator_navigate_to_pose_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False
+
+
+controller_server:
+  ros__parameters:
+    use_sim_time: False
+    controller_frequency: 20.0            # Send new velocity commands to the robot 20 times per second
+    min_x_velocity_threshold: 0.0001     # Treat any forward/backward velocity below 0.0001 m/s as zero (dead stop)
+    min_y_velocity_threshold: 0.5        # Treat any sideways velocity below 0.5 m/s as zero — intentionally high since this robot cannot move sideways
+    min_theta_velocity_threshold: 0.0001 # Treat any rotational velocity below 0.0001 rad/s as zero (dead stop)
+    failure_tolerance: 1.0               # Allow the controller to fail for up to 1.0 second before triggering a recovery behavior
+    transform_tolerance: 0.5
+
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.1  # The robot must move at least 0.1m within the time window, otherwise it's considered stuck
+      movement_time_allowance: 15.0  # The robot has 15 seconds to make measurable progress before a "stuck" failure is triggered
+
+    general_goal_checker:
+      stateful: True  # Once the robot enters the goal tolerance, it stays "at goal" even if it drifts slightly out
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.2  # The robot is considered "at the goal" when it's within 35cm of the target position
+      yaw_goal_tolerance: 0.5  # The robot is considered "at the goal" when its heading is within 0.3 radians (~17°) of target
+
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      allow_reversing: true
+      desired_linear_vel: 0.3   # Normal cruising speed: 0.3 m/s (~1 km/h) — slow and safe for indoor use
+
+      # ── LOOKAHEAD DISTANCE ────────────────────────────────────────────────
+      # The controller steers toward a point this far ahead on the path.
+      # Larger = smoother but cuts corners. Smaller = more precise but jittery.
+      lookahead_dist: 0.5                  # Default lookahead: aim for a point 0.5m ahead on the path
+      use_velocity_scaled_lookahead_dist: true  # Scale lookahead with speed: slow down = look closer ahead (better precision at low speed)
+      min_lookahead_dist: 0.25              # Never look less than 0.25m ahead (prevents oscillation at very low speeds)
+      max_lookahead_dist: 0.70              # Never look more than 0.70m ahead (prevents cutting corners at high speeds)
+      lookahead_time: 1.5                  # Alternative way to set lookahead: aim for the point the robot will reach in 1.5 seconds at current speed
+
+      # ── SPEED REGULATION ─────────────────────────────────────────────────
+      # The robot automatically slows down on sharp curves or near obstacles.
+      use_regulated_linear_velocity_scaling: true
+      regulated_linear_scaling_min_speed: 0.12  # Don't slow below 0.15 m/s even on very tight curves (prevents stalling)
+      regulated_linear_scaling_min_radius: 0.56  # Start slowing down when the path curves tighter than 0.56m radius — matches the rover's physical minimum turning radius (wheelbase 0.32m / tan(0.52 rad max steering))
+
+      # ── ROTATE TO HEADING ────────────────────────────────────────────────
+      # Before following a path, the robot spins in place to face the right direction.
+      use_rotate_to_heading: false         # Enable in-place rotation to align with path before driving
+      rotate_to_heading_angular_vel: 1.8  # Spin at up to 1.8 rad/s (~103°/s) when rotating to face the path
+      rotate_to_heading_min_angle: 0.78   # Only rotate in place if the heading error is larger than 0.78 rad (~45°); smaller errors are corrected while moving
+
+      # ── ACCELERATION LIMITS ──────────────────────────────────────────────
+      max_angular_accel: 2.0   # Maximum rotational acceleration: 2.0 rad/s²
+      max_linear_accel: 0.4    # Maximum forward/backward acceleration: 0.4 m/s²
+
+      max_robot_pose_search_dist: 10.0    # Search up to 10m along the path to find where the robot currently is — prevents "losing" the path after recovery
+      interpolate_curvature_after_goal: true # Smoothly blend path curvature near the goal to avoid jerky final approach
+
+      use_cost_regulated_linear_velocity_scaling: true
+      cost_scaling_dist: 0.4        # Start slowing 40cm from obstacles
+      cost_scaling_gain: 1.0
+      inflation_cost_scaling_factor: 25.0  # Match your local costmap's cost_scaling_factor
+
+map_server:
+  ros__parameters:
+    use_sim_time: False
+    yaml_filename: ""  # Full path to the .yaml map file — left empty here, set at launch time via command-line argument
+
+
+map_saver:
+  ros__parameters:
+    use_sim_time: False
+    save_map_timeout: 5.0         # Wait up to 5 seconds for the map topic to publish before giving up on saving
+    free_thresh_default: 0.25     # Cells with occupancy probability below 25% are saved as FREE (white) in the map image
+    occupied_thresh_default: 0.65 # Cells with occupancy probability above 65% are saved as OCCUPIED (black) in the map image
+    map_subscribe_transient_local: False  # Don't use "latched" map subscription — get fresh data only
+
+
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 1.0  # The planner is expected to produce a new path up to 20 times per second (goal re-planning rate)
+    use_sim_time: False
+    planner_plugins: ["GridBased"]
+
+    GridBased:
+      plugin: "nav2_smac_planner::SmacPlannerHybrid"  # Hybrid A* planner — finds paths that respect the robot's turning radius
+
+      tolerance: 0.2          # Accept a path endpoint within 0.2m of the exact goal (avoids failure in tight spaces)
+      allow_unknown: true      # Plan through cells the robot hasn't seen yet (gray areas on the map) — useful for exploration
+      max_iterations: 100000   # Give up path planning after 100,000 search steps — prevents the planner from hanging on impossible goals
+      max_on_approach_iterations: 1000  # Extra search steps allowed when the robot is very close to the goal
+
+      analytic_expansion_ratio: 3.5      # Try analytic shortcuts more aggressively → faster paths
+      analytic_expansion_max_length: 3.0 # Cap shortcut length to avoid wild jumps on open maps
+      smooth_path: true          # After finding a path, run it through a smoother to remove sharp zigzags
+
+      motion_model_for_search: "REEDS_SHEPP"  # Plan paths that allow both forward AND reverse motion (like a car in a parking lot)
+      angle_quantization_bins: 72    # Divide 360° into 72 bins = 5° angular resolution when planning turns
+      minimum_turning_radius: 0.80   # The rover cannot turn sharper than a 0.56m radius — physical constraint of the Ackermann drive (wheelbase 0.32m / tan(0.52 rad max steering))
+
+      # ── PATH COST PENALTIES ──────────────────────────────────────────────
+      # These shape the planner's preference for different types of motion.
+      # Higher value = planner avoids that type of motion more strongly.
+      reverse_penalty: 1.25       # Driving backward costs 1.0x more than forward — use reverse only when necessary
+      change_penalty: 5.0        # Slightly penalize switching between forward and reverse — avoids unnecessary direction changes
+      bend_penalty: 1.5
+      non_straight_penalty: 1.05 # Slightly penalize curved paths — prefer straight lines when possible
+      cost_penalty: 2.0          # Multiply the costmap cost by 2.0 — strongly encourages staying away from obstacles
+      rotation_penalty: 5.0      # In-place rotations cost 5x extra — avoid spinning unless truly needed
+
+      debug_visualizations: false  # Don't publish debug markers to RViz (turn on temporarily when tuning the planner)
+
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      # The local costmap is a small map window that moves with the robot.
+      # It tracks real-time obstacles for the controller to avoid.
+      update_frequency: 10.0   # Rebuild the local costmap 10 times per second using fresh sensor data
+      publish_frequency: 5.0   # Publish the costmap to RViz/other nodes 5 times per second
+      global_frame: odom        # Local costmap is anchored to the odom frame (moves slightly with odometry drift)
+      robot_base_frame: base_link
+      use_sim_time: False
+      rolling_window: true      # The map window is always centered on the robot — it scrolls as the robot moves
+      width: 3                  # Local costmap covers 3m to the left and right of the robot
+      height: 3                 # Local costmap covers 3m in front and behind the robot
+      resolution: 0.05          # Each grid cell is 5cm × 5cm
+      footprint: "[ [0.22, 0.125], [0.22, -0.125], [-0.28, -0.125], [-0.28, 0.125] ]"  # Robot footprint corners (meters from center): 50cm long × 25cm wide rectangle
+      plugins: ["voxel_layer", "inflation_layer"]
+      transform_tolerance: 0.5
+
+      voxel_layer:
+        # The voxel layer detects real-time obstacles from the laser scanner.
+        plugin: "nav2_costmap_2d::VoxelLayer"
+        enabled: True
+        publish_voxel_map: True    # Publish the 3D voxel grid to RViz for visualization/debugging
+        origin_z: 0.0              # The voxel grid starts at ground level (0.0m height)
+        z_resolution: 0.05         # Each voxel is 5cm tall vertically
+        z_voxels: 16               # Stack 16 voxels vertically = 80cm total height tracked (16 × 5cm)
+        max_obstacle_height: 2.0   # Ignore anything higher than 2.0m (e.g. ceiling, overhead structures)
+        mark_threshold: 0          # Mark a column as occupied if even 1 voxel in it is filled (most sensitive setting)
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0  # Discard laser points above 2.0m height
+          clearing: True            # Use laser rays to clear free space (erase old obstacles the laser can see through)
+          marking: True             # Use laser endpoints to mark new obstacles
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0   # Clear free space along laser beams up to 3.0m away from the robot
+          obstacle_max_range: 2.5   # Only mark obstacles detected within 2.5m — farther readings are less reliable
+
+      inflation_layer:
+        # The inflation layer adds a "safety bubble" around obstacles.
+        # The robot's path planner will avoid entering this bubble.
+        # inflation_radius MUST be >= circumscribed radius of the robot (0.2804m).
+        # Circumscribed radius = distance from center to farthest footprint corner
+        # = sqrt(0.25² + 0.125²) ≈ 0.2795m → use 0.35m for a safe margin.
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 25.0  # Very steep cost falloff — cost drops sharply within the bubble (robot avoids getting close)
+        inflation_radius: 0.45     # Safety bubble of 0.35m — larger than the circumscribed radius (0.2804m) as required by SmacPlannerHybrid
+
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      # The global costmap covers the entire known map.
+      # It is used by the path planner to find long-distance routes.
+      update_frequency: 0.2   # Update the full map once per second (slower than local — whole map is expensive)
+      publish_frequency: 1.0  # Publish the global costmap once per second
+      global_frame: map        # Anchored to the static map frame — does not drift
+      robot_base_frame: base_link
+      use_sim_time: False
+      footprint: "[ [0.22, 0.125], [0.22, -0.125], [-0.28, -0.125], [-0.28, 0.125] ]"  # Robot footprint corners (meters from center): 50cm long × 25cm wide rectangle
+      resolution: 0.05          # Each grid cell is 5cm × 5cm (same resolution as the saved map)
+      track_unknown_space: true # Treat unexplored gray areas as potentially dangerous — planner avoids them unless necessary
+      transform_tolerance: 0.5
+
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: True  # Subscribe to the map as a "latched" topic — get the last published map immediately on startup
+
+      obstacle_layer:
+        # Adds live sensor readings on top of the static map — marks obstacles not in the original map.
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0  # Discard laser points above 2.0m height
+          clearing: True            # Remove stale obstacles when the laser can see through that space again
+          marking: True             # Mark new obstacles detected by the laser
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0   # Clear free space along laser beams up to 3.0m
+          obstacle_max_range: 2.5   # Only mark obstacles detected within 2.5m
+
+      inflation_layer:
+        # Same concept as local costmap inflation, but tuned for global planning.
+        # inflation_radius must also be >= circumscribed radius (0.2804m).
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 5.0  # More gradual cost falloff than local costmap — global planner gets a smoother cost gradient to follow
+        inflation_radius: 0.35    # 0.35m safety bubble — larger than the circumscribed radius (0.2804m) as required by SmacPlannerHybrid
+
+
+smoother_server:
+  ros__parameters:
+    use_sim_time: False
+    smoother_plugins: ["simple_smoother"]
+    simple_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 1.0e-10  # Keep iterating until path changes by less than 0.0000000001 per step (extremely tight convergence)
+      max_its: 10000       # Run at most 10000 smoothing passes — safety cap so it doesn't loop forever
+      do_refinement: True  # After the main smoothing pass, run a second refinement pass for extra quality
+      refinement_num: 10
+
+behavior_server:
+  ros__parameters:
+    # Recovery behaviors are triggered when the robot gets stuck or navigation fails.
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0   # Check and execute recovery behaviors 10 times per second
+    behavior_plugins: ["backup", "drive_on_heading", "wait", "spin"]
+    backup:
+      plugin: "nav2_behaviors::BackUp"
+      backup_speed: 0.15          # Conservative for indoor use
+      backup_distance: 0.3        # Short backup — just enough to clear
+      time_allowance: 10.0
+    drive_on_heading:
+      plugin: "nav2_behaviors::DriveOnHeading"
+      max_linear_vel: 0.2
+      max_angular_vel: 0.5
+    wait:
+      plugin: "nav2_behaviors::Wait"            # Stop and wait in place (useful if an obstacle is temporarily blocking the path)
+    spin:
+      plugin: "nav2_behaviors::Spin"
+    global_frame: odom
+    robot_base_frame: base_link
+    transform_tolerance: 0.5      # Reject TF transforms older than 0.5 seconds during recovery
+    use_sim_time: False
+    simulate_ahead_time: 2.0      # Before executing a recovery, simulate 2.0 seconds ahead to check it won't cause a collision
+    max_rotational_vel: 1.8       # Maximum spin speed during the Spin recovery: 1.8 rad/s (~103°/s)
+    min_rotational_vel: 1.0       # Minimum spin speed: 1.0 rad/s — don't spin slower than this or the robot may stall
+    rotational_acc_lim: 6.0       # Maximum rate of change of spin speed: 6.0 rad/s² (how quickly spinning starts/stops)
+
+
+robot_state_publisher:
+  ros__parameters:
+    use_sim_time: False
+
+
+waypoint_follower:
+  ros__parameters:
+    use_sim_time: False
+    loop_rate: 20           # Check whether the robot has reached the current waypoint 20 times per second
+    stop_on_failure: false  # If navigation to one waypoint fails, skip it and continue to the next one (don't abort the whole mission)
+    waypoint_task_executor_plugin: "wait_at_waypoint"
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: True
+      waypoint_pause_duration: 200  # After arriving at each waypoint, pause for 200ms before heading to the next one
+
+
+velocity_smoother:
+  ros__parameters:
+    # The velocity smoother filters out sudden jumps in the velocity commands
+    # so the robot accelerates and decelerates smoothly instead of jerking.
+    use_sim_time: False
+    smoothing_frequency: 50.0  # Apply velocity smoothing 50 times per second
+    scale_velocities: False     # Don't scale all velocity components proportionally — apply limits independently
+    feedback: "OPEN_LOOP"       # Trust the commanded velocity, not the measured odometry, for smoothing calculations
+
+    # Format: [forward/backward (m/s), sideways (m/s), rotation (rad/s)]
+    max_velocity: [0.3, 0.0, 1.5]       # Max allowed speeds: 0.3 m/s forward, 0 sideways (Ackermann), 1.5 rad/s rotation
+    min_velocity: [-0.25, 0.0, -1.5]     # Max allowed speeds in reverse: 0.3 m/s backward, 1.5 rad/s counter-clockwise
+    max_accel: [0.6, 0.0, 6.0]          # Max acceleration: 0.6 m/s² forward, 6.0 rad/s² rotation
+    max_decel: [-0.6, 0.0, -6.0]        # Max deceleration: -0.6 m/s² forward, -6.0 rad/s² rotation (braking)
+    deadband_velocity: [0.01, 0.0, 0.05] # Command velocities below these thresholds are treated as zero — removes tiny unintended movements
+
+    odom_topic: "odom"
+    odom_duration: 0.1     # Look at the last 0.1 seconds of odometry data to estimate current velocity (used in CLOSED_LOOP mode)
+    velocity_timeout: 0.1  # If no new velocity command arrives within 0.1 seconds, send a zero command to stop the robot safely
+
+
+collision_monitor:
+  ros__parameters:
+    # The collision monitor is a safety layer that overrides velocity commands
+    # if the robot is about to hit something. It runs independently of navigation.
+    use_sim_time: False
+    base_frame_id: "base_link"
+    odom_frame_id: "odom"
+    cmd_vel_in_topic: "cmd_vel_smoothed"  # Reads the velocity command AFTER it has been smoothed
+    cmd_vel_out_topic: "/cmd_vel_nav"     # Publishes the (possibly zeroed) safe velocity command to the robot's motor driver
+    transform_tolerance: 0.5  # Reject TF data older than 0.5 seconds
+    source_timeout: 5.0        # If no sensor data arrives for 5.0 seconds, treat it as a sensor failure and stop the robot
+    base_shift_correction: True # Account for the robot moving between when sensor data was captured and when it's processed
+    stop_pub_count: 2           # When stopping the robot, publish the zero-velocity command 2 times to ensure the motor driver receives it
+
+    observation_sources: ["scan"]
+    scan:
+      type: "scan"
+      topic: "/scan"
+      enabled: True
+
+    polygons: ["SlowDown", "FootprintApproach"]
+    SlowDown:
+      type: "polygon"
+      points: "[[0.32, 0.175], [0.32, -0.175], [-0.38, -0.175], [-0.38, 0.175]]"
+      action_type: "slowdown"
+      slowdown_ratio: 0.5
+
+    FootprintApproach:
+      type: "polygon"
+      points: "[[0.22, 0.125], [0.22, -0.125], [-0.28, -0.125], [-0.28, 0.125]]"
+      action_type: "stop"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LIFECYCLE MANAGERS
+# Two separate managers: one for localization, one for navigation.
+# Nodes are started AND shut down in the listed order.
+# ─────────────────────────────────────────────────────────────────────────────
+
+lifecycle_manager_localization:
+  ros__parameters:
+    use_sim_time: False
+    autostart: True
+    node_names:
+      - map_server  # Must come first — amcl needs the map to be available
+      - amcl
+
+lifecycle_manager_navigation:
+  ros__parameters:
+    use_sim_time: False
+    autostart: True
+    node_names:
+      - controller_server    # 1. Start the velocity controller first (needed by others)
+      - smoother_server      # 2. Start the path smoother
+      - planner_server       # 3. Start the global path planner
+      - route_server         # 4. Start the route server
+      - behavior_server      # 5. Start recovery behaviors
+      - bt_navigator         # 6. Start the behavior tree (depends on all servers above)
+      - waypoint_follower    # 7. Start the waypoint mission executor
+      - velocity_smoother    # 8. Start the velocity smoother (post-processes controller output)
+      - collision_monitor    # 9. Start the safety layer last (monitors everything above)
+      - docking_server       # 10. Start the docking server
+
+
+docking_server:
+  ros__parameters:
+    use_sim_time: False
+    controller_frequency: 50.0  # Run the docking controller at 50Hz — much faster than normal navigation for precise final alignment
+    dock_plugins: ['simple_dock']
+    simple_dock:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.15  # The robot is considered successfully docked when it's within 15cm of the dock target pose
+      staging_pose:            # The intermediate approach pose the robot drives to before beginning the final slow dock-in
+        x: 0.0                 # No forward offset from dock (approach directly)
+        y: 0.0                 # No lateral offset from dock
+        yaw: 0.0               # No angular offset — approach straight-on
