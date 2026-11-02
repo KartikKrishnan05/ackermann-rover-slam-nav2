@@ -30,17 +30,14 @@ import argparse
 import csv
 import re
 import subprocess
-import signal
-import sys
-import time
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
 import rclpy
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import Float32
 
 # ---------------------------------------------------------------------------
@@ -52,8 +49,11 @@ DEFAULT_OUTPUT = "wifi_signal_log.csv"
 
 CSV_FIELDS = [
     "timestamp",
-    "x", "y", "z",
-    "orientation_z", "orientation_w",
+    "x",
+    "y",
+    "z",
+    "orientation_z",
+    "orientation_w",
     "ssid",
     "frequency_mhz",
     "signal_dbm",
@@ -68,22 +68,28 @@ CSV_FIELDS = [
 # WiFi signal readers (same multi-backend approach)
 # ---------------------------------------------------------------------------
 
+
 def read_iwconfig(interface: str) -> dict:
     result = subprocess.run(
         ["iwconfig", interface],
-        capture_output=True, text=True, timeout=5,
+        capture_output=True,
+        text=True,
+        timeout=5,
     )
     out = result.stdout
     info = {}
 
     m = re.search(r'ESSID:"([^"]*)"', out)
-    if m: info["ssid"] = m.group(1)
+    if m:
+        info["ssid"] = m.group(1)
 
     m = re.search(r"Frequency[:\s]*([\d.]+)\s*GHz", out)
-    if m: info["frequency_mhz"] = int(float(m.group(1)) * 1000)
+    if m:
+        info["frequency_mhz"] = int(float(m.group(1)) * 1000)
 
     m = re.search(r"Signal level[=:]\s*(-?\d+)\s*dBm", out)
-    if m: info["signal_dbm"] = int(m.group(1))
+    if m:
+        info["signal_dbm"] = int(m.group(1))
 
     m = re.search(r"Link Quality[=:]\s*(\d+)/(\d+)", out)
     if m:
@@ -91,13 +97,16 @@ def read_iwconfig(interface: str) -> dict:
         info["link_quality_max"] = int(m.group(2))
 
     m = re.search(r"Noise level[=:]\s*(-?\d+)\s*dBm", out)
-    if m: info["noise_dbm"] = int(m.group(1))
+    if m:
+        info["noise_dbm"] = int(m.group(1))
 
     m = re.search(r"Bit Rate[=:]\s*([\d.]+)\s*Mb/s", out)
-    if m: info["bitrate_mbps"] = float(m.group(1))
+    if m:
+        info["bitrate_mbps"] = float(m.group(1))
 
     m = re.search(r"Tx-Power[=:]\s*(\d+)\s*dBm", out)
-    if m: info["tx_power_dbm"] = int(m.group(1))
+    if m:
+        info["tx_power_dbm"] = int(m.group(1))
 
     return info
 
@@ -107,21 +116,27 @@ def read_iw(interface: str) -> dict:
     try:
         result = subprocess.run(
             ["iw", "dev", interface, "link"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         out = result.stdout
 
         m = re.search(r"SSID:\s*(.+)", out)
-        if m: info["ssid"] = m.group(1).strip()
+        if m:
+            info["ssid"] = m.group(1).strip()
 
         m = re.search(r"freq:\s*(\d+)", out)
-        if m: info["frequency_mhz"] = int(m.group(1))
+        if m:
+            info["frequency_mhz"] = int(m.group(1))
 
         m = re.search(r"signal:\s*(-?\d+)\s*dBm", out)
-        if m: info["signal_dbm"] = int(m.group(1))
+        if m:
+            info["signal_dbm"] = int(m.group(1))
 
         m = re.search(r"tx bitrate:\s*([\d.]+)\s*MBit/s", out)
-        if m: info["bitrate_mbps"] = float(m.group(1))
+        if m:
+            info["bitrate_mbps"] = float(m.group(1))
     except Exception:
         pass
     return info
@@ -142,6 +157,7 @@ def get_signal(interface: str) -> dict:
 # ROS2 Node
 # ---------------------------------------------------------------------------
 
+
 class WifiSignalLogger(Node):
     def __init__(self, interface: str, interval: float, output_path: str):
         super().__init__("wifi_signal_logger")
@@ -152,8 +168,11 @@ class WifiSignalLogger(Node):
         # Current pose (updated by subscriber callbacks)
         self._pose_lock = threading.Lock()
         self._current_pose = {
-            "x": 0.0, "y": 0.0, "z": 0.0,
-            "orientation_z": 0.0, "orientation_w": 1.0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "orientation_z": 0.0,
+            "orientation_w": 1.0,
         }
         self._pose_received = False
 
@@ -199,7 +218,9 @@ class WifiSignalLogger(Node):
         file_exists = Path(self.output_path).exists()
         self._csvfile = open(self.output_path, "a", newline="")
         self._writer = csv.DictWriter(
-            self._csvfile, fieldnames=CSV_FIELDS, extrasaction="ignore",
+            self._csvfile,
+            fieldnames=CSV_FIELDS,
+            extrasaction="ignore",
         )
         if not file_exists:
             self._writer.writeheader()
@@ -291,6 +312,7 @@ class WifiSignalLogger(Node):
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def main():
     parser = argparse.ArgumentParser(

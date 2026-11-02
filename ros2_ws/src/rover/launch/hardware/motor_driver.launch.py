@@ -8,8 +8,9 @@ implementations (Adafruit vs. Voidpp).
 import os
 
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
 from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 
 def generate_launch_description():
@@ -25,9 +26,7 @@ def generate_launch_description():
         package="rover",
         executable="motor_driver_voidpp",
         name="motor_driver_voidpp",
-        parameters=[config_path]
+        parameters=[config_path],
     )
 
-    return LaunchDescription(
-        [voidpp_node]
-    )
+    return LaunchDescription([voidpp_node])

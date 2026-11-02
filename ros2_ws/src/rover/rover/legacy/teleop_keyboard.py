@@ -17,6 +17,7 @@ Dependencies:
   - busio
   - curses
 """
+
 # pylint: disable=import-error
 # pyright: reportMissingImports=false
 
@@ -172,11 +173,7 @@ def main(stdscr):
             f"FWD Zone: {FWD_START:.0f}-{FWD_MAX:.0f} | "
             f"REV Zone: {REV_START:.0f}-{REV_MAX:.0f}",
         )
-        stdscr.addstr(
-            8,
-            0,
-            "Controls: Arrows to move, Space to Stop, 'q' to Quit"
-        )
+        stdscr.addstr(8, 0, "Controls: Arrows to move, Space to Stop, 'q' to Quit")
         stdscr.refresh()
 
         time.sleep(0.05)

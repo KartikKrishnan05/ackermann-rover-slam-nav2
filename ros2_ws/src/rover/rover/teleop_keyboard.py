@@ -83,8 +83,7 @@ class KeyboardTeleop(Node):
 
         twist.angular.z = self.angular
         self.pub.publish(twist)
-        print(f"Lin: {twist.linear.x:.2f} | Ang: {twist.angular.z:.2f}",
-              end="\r")
+        print(f"Lin: {twist.linear.x:.2f} | Ang: {twist.angular.z:.2f}", end="\r")
 
 
 def main(args=None):

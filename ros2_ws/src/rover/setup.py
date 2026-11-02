@@ -14,6 +14,7 @@ This script defines the ROS 2 package structure and installation rules:
 
 import os
 from glob import glob
+
 from setuptools import setup
 
 PACKAGE_NAME = "rover"
@@ -42,13 +43,7 @@ data_files = [
         glob("launch/hardware/*.launch.py"),
     ),
     (
-        os.path.join(
-            "share",
-            PACKAGE_NAME,
-            "launch",
-            "simulation",
-            "gz_plugin"
-        ),
+        os.path.join("share", PACKAGE_NAME, "launch", "simulation", "gz_plugin"),
         glob("launch/gz_plugin/*.launch.py"),
     ),
     # 4. RViz configurations
@@ -98,9 +93,9 @@ setup(
         "console_scripts": [
             "teleop_keyboard = rover.teleop_keyboard:main",
             "teleop_joystick = rover.teleop_joystick:main",
-            "motor_driver_adafruit = rover.motor_driver_adafruit:main",
             "motor_driver_voidpp = rover.motor_driver_voidpp:main",
             "twist_stamper = rover.twist_stamper:main",
+            "frontier_explorer = rover.frontier_explorer:main",
         ],
     },
 )

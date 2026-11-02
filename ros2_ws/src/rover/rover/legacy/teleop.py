@@ -21,28 +21,28 @@ Key bindings
 # -------------------------------------------------------------------------
 # Standard‑library imports
 # -------------------------------------------------------------------------
-import select                 # non‑blocking stdin polling
-import sys                    # access to stdin / stdout
-import termios                # terminal raw‑mode handling
-import tty                    # helper for raw mode
+import select  # non‑blocking stdin polling
+import sys  # access to stdin / stdout
+import termios  # terminal raw‑mode handling
+import tty  # helper for raw mode
 
 # -------------------------------------------------------------------------
 # ROS 2 imports
 # -------------------------------------------------------------------------
-import rclpy                                 # core ROS‑2 Python API
-from geometry_msgs.msg import Twist         # velocity command message type
-from rclpy.node import Node                 # base class for ROS‑2 nodes
+import rclpy  # core ROS‑2 Python API
+from geometry_msgs.msg import Twist  # velocity command message type
+from rclpy.node import Node  # base class for ROS‑2 nodes
 
 # -------------------------------------------------------------------------
 # Configuration constants (tunable at the top of the file)
 # -------------------------------------------------------------------------
-TOPIC_NAME = "/cmd_vel"          # ROS topic for velocity commands
-MAX_SPEED = 0.5                  # [m s⁻¹] absolute linear speed limit
-MAX_STEER = 0.52                 # [rad] absolute steering angle limit
-STEER_STEP = 0.05                # [rad] steering increment per key press
+TOPIC_NAME = "/cmd_vel"  # ROS topic for velocity commands
+MAX_SPEED = 0.5  # [m s⁻¹] absolute linear speed limit
+MAX_STEER = 0.52  # [rad] absolute steering angle limit
+STEER_STEP = 0.05  # [rad] steering increment per key press
 
 # Smoothing settings
-SMOOTH_STEP = 0.15               # speed change per loop iteration
+SMOOTH_STEP = 0.15  # speed change per loop iteration
 
 # Human‑readable help shown on the console
 INSTRUCTIONS = """
@@ -139,9 +139,9 @@ def main(args=None) -> None:
     # -----------------------------------------------------------------
     # State variables - keep track of user intent and smoothed commands
     # -----------------------------------------------------------------
-    steer = 0.0               # current steering angle request
-    target_speed = 0.0        # speed that the user wants (set by keys)
-    control_speed = 0.0       # speed actually sent to the robot (smoothed)
+    steer = 0.0  # current steering angle request
+    target_speed = 0.0  # speed that the user wants (set by keys)
+    control_speed = 0.0  # speed actually sent to the robot (smoothed)
 
     try:
         # Print the help / status line before entering the loop
@@ -168,7 +168,7 @@ def main(args=None) -> None:
                 target_speed = 0.0
                 control_speed = 0.0
                 steer = 0.0
-            elif key == "\x03":        # Ctrl‑C
+            elif key == "\x03":  # Ctrl‑C
                 break
             else:
                 # No relevant key pressed → target speed collapses to zero
@@ -178,13 +178,9 @@ def main(args=None) -> None:
             # 2️⃣  SMOOTHING - move control speed toward target
             # ---------------------------------
             if control_speed < target_speed:
-                control_speed = min(
-                    target_speed, control_speed + SMOOTH_STEP
-                )
+                control_speed = min(target_speed, control_speed + SMOOTH_STEP)
             elif control_speed > target_speed:
-                control_speed = max(
-                    target_speed, control_speed - SMOOTH_STEP
-                )
+                control_speed = max(target_speed, control_speed - SMOOTH_STEP)
 
             # If we are very close, snap to the exact target value
             if abs(control_speed - target_speed) < 0.01:
@@ -203,7 +199,7 @@ def main(args=None) -> None:
             )
             sys.stdout.flush()
 
-    except Exception as error:          # pylint: disable=broad-except
+    except Exception as error:  # pylint: disable=broad-except
         # Any unexpected exception is printed before shutdown
         print(error)
 

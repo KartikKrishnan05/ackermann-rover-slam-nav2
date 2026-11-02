@@ -41,9 +41,7 @@ class VoidppMotorDriver(Node):
         self.device = Device(addr, bus)
         self.device.set_pwm_frequency(50)
 
-        self.sub = self.create_subscription(
-            Twist, "cmd_vel_mux", self.callback, 10
-        )
+        self.sub = self.create_subscription(Twist, "cmd_vel_mux", self.callback, 10)
         self.get_logger().info("Voidpp Driver Node Ready")
 
     def us_to_ticks(self, us):
@@ -60,8 +58,9 @@ class VoidppMotorDriver(Node):
         s_c = self.get_parameter("steer_center_us").value
 
         # s_us = s_c + (msg.angular.z * 500.0)
-        # Nav2 return us the angular velocity (Steering values) ONLY while driving backwards 
-        # Meaning we have to reverse the +- Sign in the front to counter that
+        # Nav2 returns us the angular velocity (Steering values) ONLY while
+        # driving backwards. Meaning we have to reverse the +- Sign in the
+        # front to counter that
 
         if abs(msg.linear.x) < 0.005:
             t_us = neutral

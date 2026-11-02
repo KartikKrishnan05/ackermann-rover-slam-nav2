@@ -16,6 +16,7 @@ Dependencies:
   - board
   - busio
 """
+
 # pylint: disable=import-error
 # pyright: reportMissingImports=false
 

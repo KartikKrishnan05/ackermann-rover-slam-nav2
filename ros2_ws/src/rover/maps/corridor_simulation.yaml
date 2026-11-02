@@ -1,4 +1,4 @@
-image: my_office_map291225.pgm
+image: corridor_simulation.pgm
 mode: trinary
 resolution: 0.050
 origin: [-7.575, -4.333, 0]

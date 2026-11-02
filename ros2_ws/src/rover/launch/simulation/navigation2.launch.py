@@ -28,11 +28,12 @@ import os
 # ROS-2 and launch imports
 # -------------------------------------------------------------------------
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -57,7 +58,7 @@ def generate_launch_description() -> LaunchDescription:
     # map - full path to the YAML map file.
     map_dir = LaunchConfiguration(
         "map",
-        default=os.path.join(pkg_rover, "maps", "my_office_map291225.yaml"),
+        default=os.path.join(pkg_rover, "maps", "corridor_simulation.yaml"),
     )
 
     # params_file - full path to the Nav2 parameter file.
@@ -75,9 +76,7 @@ def generate_launch_description() -> LaunchDescription:
     nav2_launch_file_dir = os.path.join(nav2_bringup_dir, "launch")
 
     # The default RViz view that ships with Nav2.
-    rviz_config_dir = os.path.join(
-        nav2_bringup_dir, "rviz", "nav2_default_view.rviz"
-    )
+    rviz_config_dir = os.path.join(nav2_bringup_dir, "rviz", "nav2_default_view.rviz")
 
     # -----------------------------------------------------------------
     # Assemble the LaunchDescription.

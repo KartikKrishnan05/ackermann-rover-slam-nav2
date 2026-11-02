@@ -26,7 +26,6 @@ import os
 # ROS 2 and launch imports
 # -------------------------------------------------------------------------
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     ExecuteProcess,
@@ -37,6 +36,8 @@ from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -58,9 +59,7 @@ def generate_launch_description() -> LaunchDescription:
     # -----------------------------------------------------------------
     world_path = os.path.join(pkg_rover, "world", "world.sdf")
 
-    default_rviz_config_path = os.path.join(
-        pkg_rover, "rviz", "my_rviz_config.rviz"
-    )
+    default_rviz_config_path = os.path.join(pkg_rover, "rviz", "my_rviz_config.rviz")
 
     slam_params_file = os.path.join(
         pkg_rover, "config", "mapper_params_online_async.yaml"
@@ -134,11 +133,16 @@ def generate_launch_description() -> LaunchDescription:
         executable="create",
         output="screen",
         arguments=[
-            "-name", "rover",
-            "-topic", "robot_description",  # Reads URDF from this topic
-            "-x", "-5.0",
-            "-y", "2.0",
-            "-z", "0.2",
+            "-name",
+            "rover",
+            "-topic",
+            "robot_description",  # Reads URDF from this topic
+            "-x",
+            "-5.0",
+            "-y",
+            "2.0",
+            "-z",
+            "0.2",
         ],
     )
 
@@ -163,10 +167,7 @@ def generate_launch_description() -> LaunchDescription:
     #    Publishes static TFs from the Xacro/URDF.
     robot_state_publisher_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(
-                launch_file_dir,
-                "robot_state_publisher_gzplugin.launch.py"
-            )
+            os.path.join(launch_file_dir, "robot_state_publisher_gzplugin.launch.py")
         ),
         launch_arguments={"use_sim_time": use_sim_time}.items(),
     )
@@ -201,8 +202,14 @@ def generate_launch_description() -> LaunchDescription:
         executable="static_transform_publisher",
         name="lidar_tf_fix",
         arguments=[
-            "0", "0", "0", "0", "0", "0",
-            "lidar_link", "rover/base_link/lidar_2d_v2"
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "lidar_link",
+            "rover/base_link/lidar_2d_v2",
         ],
         output="screen",
     )
@@ -239,7 +246,6 @@ def generate_launch_description() -> LaunchDescription:
             # Environment Setup
             # -----------------------------------------------------------------
             gz_resource_path,
-
             # -----------------------------------------------------------------
             # Core Simulation Nodes
             # -----------------------------------------------------------------
@@ -248,13 +254,11 @@ def generate_launch_description() -> LaunchDescription:
             spawn_entity,
             bridge_launch,
             lidar_tf_fix,
-
             # -----------------------------------------------------------------
             # Tools and Navigation
             # -----------------------------------------------------------------
             rviz_node,
             slam_launch,
-
             # -----------------------------------------------------------------
             # Teleoperation (Pop-up Terminal)
             # -----------------------------------------------------------------

@@ -27,38 +27,38 @@ Features
 # -------------------------------------------------------------------------
 # Standard library imports
 # -------------------------------------------------------------------------
-import math                 # trigonometric functions for Ackermann conversion
-import select               # non-blocking stdin polling
-import sys                  # access to stdin / stdout
-import termios              # terminal control (raw mode handling)
-import tty                  # helper for raw mode
+import math  # trigonometric functions for Ackermann conversion
+import select  # non-blocking stdin polling
+import sys  # access to stdin / stdout
+import termios  # terminal control (raw mode handling)
+import tty  # helper for raw mode
 
 # -------------------------------------------------------------------------
 # ROS-2 imports
 # -------------------------------------------------------------------------
-import rclpy                            # core ROS-2 Python API
-from geometry_msgs.msg import Twist    # velocity command message type
-from rclpy.node import Node            # base class for ROS-2 nodes
+import rclpy  # core ROS-2 Python API
+from geometry_msgs.msg import Twist  # velocity command message type
+from rclpy.node import Node  # base class for ROS-2 nodes
 from rclpy.parameter import Parameter  # used to set the ``use_sim_time`` flag
 
 # -------------------------------------------------------------------------
 # Configuration constants (tunable at the top of the file)
 # -------------------------------------------------------------------------
-TOPIC_NAME = "/cmd_vel"          # topic on which commands are published
+TOPIC_NAME = "/cmd_vel"  # topic on which commands are published
 
 # Speed limits (hard caps for safety)
-MAX_SPEED = 2.0            # [m/s]   maximum absolute linear speed
-MAX_STEER_ANGLE = 0.65     # [rad]   maximum absolute steering angle (~37°)
+MAX_SPEED = 2.0  # [m/s]   maximum absolute linear speed
+MAX_STEER_ANGLE = 0.65  # [rad]   maximum absolute steering angle (~37°)
 
 # Increment steps when a key is pressed
-STEER_STEP = 0.05          # [rad]   steering change per key press
-SPEED_STEP = 0.5           # [m/s]   speed change per key press
+STEER_STEP = 0.05  # [rad]   steering change per key press
+SPEED_STEP = 0.5  # [m/s]   speed change per key press
 
 # Smoothing step - how fast the command speed approaches the target
-SMOOTH_STEP = 0.2          # [m/s] per iteration
+SMOOTH_STEP = 0.2  # [m/s] per iteration
 
 # Physical parameter of the rover (used in Ackermann conversion)
-WHEELBASE = 1.0            # distance between front and rear axle [m]
+WHEELBASE = 1.0  # distance between front and rear axle [m]
 
 # Human-readable help shown on the console
 INSTRUCTIONS = (
@@ -92,17 +92,13 @@ class RoverTeleop(Node):
         super().__init__("rover_teleop_node")
 
         # Respect simulation time when Gazebo is used.
-        self.set_parameters(
-            [Parameter("use_sim_time", Parameter.Type.BOOL, True)]
-        )
+        self.set_parameters([Parameter("use_sim_time", Parameter.Type.BOOL, True)])
 
         # Publisher for the teleop velocity commands.
         self.publisher_ = self.create_publisher(Twist, TOPIC_NAME, 10)
 
         # Log the topic name for the user.
-        self.get_logger().info(
-            f"Publishing teleop commands on: {TOPIC_NAME}"
-        )
+        self.get_logger().info(f"Publishing teleop commands on: {TOPIC_NAME}")
 
     def send_command(self, speed: float, steer_angle: float) -> None:
         """
@@ -164,9 +160,9 @@ def get_key(settings, timeout: float = 0.1) -> str:
     str
         The character read from stdin, or ``""`` if the timeout elapsed.
     """
-    tty.setraw(sys.stdin.fileno())               # enable raw mode
+    tty.setraw(sys.stdin.fileno())  # enable raw mode
     rlist, _, _ = select.select([sys.stdin], [], [], timeout)
-    key = sys.stdin.read(1) if rlist else ""    # read a single char
+    key = sys.stdin.read(1) if rlist else ""  # read a single char
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
     return key
 
@@ -197,12 +193,12 @@ def main() -> None:
     # State variables - keep track of the user’s intent and the smoothed
     # commands.
     # -----------------------------------------------------------------
-    target_speed = 0.0     # speed requested by the user (via keys)
-    control_speed = 0.0    # speed actually sent to the robot (smoothed)
-    steer_angle = 0.0      # current steering angle request
+    target_speed = 0.0  # speed requested by the user (via keys)
+    control_speed = 0.0  # speed actually sent to the robot (smoothed)
+    steer_angle = 0.0  # current steering angle request
 
     # Flags that influence behaviour
-    was_active = True      # remembers if we were publishing non-zero commands
+    was_active = True  # remembers if we were publishing non-zero commands
     parking_brake = False  # true while the parking-brake (TAB) is engaged
 
     try:
@@ -218,7 +214,7 @@ def main() -> None:
             # -------------------------------------------------------------
             # 1️⃣ INPUT HANDLING
             # -------------------------------------------------------------
-            if key == "\t":                     # TAB - toggle parking brake
+            if key == "\t":  # TAB - toggle parking brake
                 parking_brake = not parking_brake
                 if parking_brake:
                     # When the brake is engaged we immediately clear all
@@ -235,11 +231,11 @@ def main() -> None:
                 steer_angle = min(MAX_STEER_ANGLE, steer_angle + STEER_STEP)
             elif key == "d" and not parking_brake:
                 steer_angle = max(-MAX_STEER_ANGLE, steer_angle - STEER_STEP)
-            elif key == " ":                     # SPACE - emergency stop
+            elif key == " ":  # SPACE - emergency stop
                 target_speed = 0.0
                 control_speed = 0.0
                 steer_angle = 0.0
-            elif key == "\x03":                 # Ctrl-C
+            elif key == "\x03":  # Ctrl-C
                 break
 
             # -------------------------------------------------------------
@@ -247,13 +243,9 @@ def main() -> None:
             # -------------------------------------------------------------
             if not parking_brake:
                 if control_speed < target_speed:
-                    control_speed = min(
-                        target_speed, control_speed + SMOOTH_STEP
-                    )
+                    control_speed = min(target_speed, control_speed + SMOOTH_STEP)
                 elif control_speed > target_speed:
-                    control_speed = max(
-                        target_speed, control_speed - SMOOTH_STEP
-                    )
+                    control_speed = max(target_speed, control_speed - SMOOTH_STEP)
 
                 # Snap to the exact target when we are sufficiently close.
                 if abs(control_speed - target_speed) < 0.05:
@@ -270,9 +262,7 @@ def main() -> None:
                 # ``twist_mux`` in the “brake” position.
                 node.send_command(0.0, 0.0)
                 was_active = True
-                sys.stdout.write(
-                    "\r*** PARKING BRAKE *** | Press TAB to release      "
-                )
+                sys.stdout.write("\r*** PARKING BRAKE *** | Press TAB to release      ")
             elif (abs(control_speed) > 0.001) or (abs(steer_angle) > 0.001):
                 # Driving mode - send the smoothed command.
                 node.send_command(control_speed, steer_angle)

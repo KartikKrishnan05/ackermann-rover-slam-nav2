@@ -16,8 +16,8 @@ stamped messages to verify command freshness.
 """
 
 import rclpy
-from rclpy.node import Node
 from geometry_msgs.msg import Twist, TwistStamped
+from rclpy.node import Node
 
 
 class TwistStamper(Node):
@@ -26,7 +26,7 @@ class TwistStamper(Node):
     """
 
     def __init__(self):
-        super().__init__('twist_stamper')
+        super().__init__("twist_stamper")
 
         # -----------------------------------------------------------------
         # Subscribers
@@ -34,10 +34,7 @@ class TwistStamper(Node):
         # Listen to the multiplexed output from twist_mux.
         # This topic aggregates commands from Nav2, Teleop, etc.
         self.subscription = self.create_subscription(
-            Twist,
-            '/cmd_vel_mux',
-            self.listener_callback,
-            10
+            Twist, "/cmd_vel_mux", self.listener_callback, 10
         )
 
         # -----------------------------------------------------------------
@@ -46,15 +43,13 @@ class TwistStamper(Node):
         # Publish the stamped message to the Ackermann controller.
         # The controller expects TwistStamped to ensure commands are not stale.
         self.publisher = self.create_publisher(
-            TwistStamped,
-            '/ackermann_steering_controller/reference',
-            10
+            TwistStamped, "/ackermann_steering_controller/reference", 10
         )
 
         # Log startup info
         self.get_logger().info(
-            'Twist Stamper Started: /cmd_vel_mux -> '
-            '/ackermann_steering_controller/reference'
+            "Twist Stamper Started: /cmd_vel_mux -> "
+            "/ackermann_steering_controller/reference"
         )
 
     def listener_callback(self, msg_in: Twist):
@@ -72,7 +67,7 @@ class TwistStamper(Node):
 
         # 2. Set the frame ID
         #    'base_footprint' is standard for robot velocity commands.
-        msg_out.header.frame_id = 'base_footprint'
+        msg_out.header.frame_id = "base_footprint"
 
         # 3. Copy the velocity data (linear & angular) from input to output
         msg_out.twist = msg_in
@@ -94,10 +89,10 @@ def main(args=None):
         pass
     finally:
         # Clean up and shutdown
-        if 'node' in locals():
+        if "node" in locals():
             node.destroy_node()
         rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

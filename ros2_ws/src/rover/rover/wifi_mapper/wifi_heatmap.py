@@ -26,16 +26,14 @@ Usage:
 import argparse
 import sys
 import time
-from pathlib import Path
 
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
+import yaml as pyyaml  # pip install pyyaml
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.interpolate import griddata
-import yaml as pyyaml  # pip install pyyaml
-
 
 # ---------------------------------------------------------------------------
 # Custom colormap: blue (weak) → cyan → green → yellow → red (strong)
@@ -43,14 +41,14 @@ import yaml as pyyaml  # pip install pyyaml
 WIFI_CMAP = LinearSegmentedColormap.from_list(
     "wifi_signal",
     [
-        (0.0,  "#0000FF"),  # -90 dBm  deep blue (very weak / dead zone)
+        (0.0, "#0000FF"),  # -90 dBm  deep blue (very weak / dead zone)
         (0.15, "#0066FF"),  # blue
         (0.30, "#00CCFF"),  # cyan
         (0.45, "#00FF88"),  # green-cyan
         (0.60, "#66FF00"),  # green-yellow
         (0.75, "#FFCC00"),  # yellow-orange
         (0.90, "#FF4400"),  # orange-red
-        (1.0,  "#FF0000"),  # -30 dBm  red (excellent signal)
+        (1.0, "#FF0000"),  # -30 dBm  red (excellent signal)
     ],
 )
 
@@ -63,10 +61,8 @@ def load_nav2_map(pgm_path: str, yaml_path: str):
     with open(yaml_path, "r") as f:
         meta = pyyaml.safe_load(f)
 
-    resolution = meta["resolution"]          # meters per pixel
-    origin = meta["origin"]                  # [x, y, theta]
-    occupied_thresh = meta.get("occupied_thresh", 0.65)
-    free_thresh = meta.get("free_thresh", 0.196)
+    resolution = meta["resolution"]  # meters per pixel
+    origin = meta["origin"]  # [x, y, theta]
 
     map_img = plt.imread(pgm_path)
 
@@ -145,6 +141,7 @@ def build_heatmap(
     # Optionally mask areas far from any data point
     if radius is not None:
         from scipy.spatial import cKDTree
+
         tree = cKDTree(np.column_stack([x, y]))
         grid_points = np.column_stack([xi_grid.ravel(), yi_grid.ravel()])
         dists, _ = tree.query(grid_points)
@@ -192,8 +189,9 @@ def build_heatmap(
     )
 
     # Draw rover path as dots
-    scatter = ax.scatter(
-        x, y,
+    ax.scatter(
+        x,
+        y,
         c=signal,
         cmap=WIFI_CMAP,
         norm=norm,
@@ -205,10 +203,28 @@ def build_heatmap(
     )
 
     # Draw start / end markers
-    ax.plot(x[0], y[0], "^", color="white", markersize=12,
-            markeredgecolor="black", markeredgewidth=1.5, zorder=3, label="Start")
-    ax.plot(x[-1], y[-1], "s", color="white", markersize=10,
-            markeredgecolor="black", markeredgewidth=1.5, zorder=3, label="End")
+    ax.plot(
+        x[0],
+        y[0],
+        "^",
+        color="white",
+        markersize=12,
+        markeredgecolor="black",
+        markeredgewidth=1.5,
+        zorder=3,
+        label="Start",
+    )
+    ax.plot(
+        x[-1],
+        y[-1],
+        "s",
+        color="white",
+        markersize=10,
+        markeredgecolor="black",
+        markeredgewidth=1.5,
+        zorder=3,
+        label="End",
+    )
 
     # Colorbar
     cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
@@ -251,7 +267,9 @@ def build_heatmap(
         f"Area: {(x.max()-x.min()):.1f} × {(y.max()-y.min()):.1f} m"
     )
     ax.text(
-        0.98, 0.02, stats_text,
+        0.98,
+        0.02,
+        stats_text,
         transform=ax.transAxes,
         fontsize=9,
         verticalalignment="bottom",
@@ -269,25 +287,47 @@ def build_heatmap(
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(description="WiFi signal heatmap visualizer")
     parser.add_argument("csv", help="Path to wifi_signal_log.csv")
     parser.add_argument("--map", help="Path to Nav2 map .pgm file")
     parser.add_argument("--yaml", help="Path to Nav2 map .yaml file")
-    parser.add_argument("--grid-res", type=float, default=0.1,
-                        help="Interpolation grid resolution in meters (default: 0.1)")
-    parser.add_argument("--vmin", type=float, default=-90,
-                        help="Min signal for color scale (default: -90 dBm)")
-    parser.add_argument("--vmax", type=float, default=-30,
-                        help="Max signal for color scale (default: -30 dBm)")
-    parser.add_argument("--radius", type=float, default=None,
-                        help="Max interpolation radius in meters (masks far areas)")
+    parser.add_argument(
+        "--grid-res",
+        type=float,
+        default=0.1,
+        help="Interpolation grid resolution in meters (default: 0.1)",
+    )
+    parser.add_argument(
+        "--vmin",
+        type=float,
+        default=-90,
+        help="Min signal for color scale (default: -90 dBm)",
+    )
+    parser.add_argument(
+        "--vmax",
+        type=float,
+        default=-30,
+        help="Max signal for color scale (default: -30 dBm)",
+    )
+    parser.add_argument(
+        "--radius",
+        type=float,
+        default=None,
+        help="Max interpolation radius in meters (masks far areas)",
+    )
     parser.add_argument("--save", help="Save to file instead of displaying")
     parser.add_argument("--dpi", type=int, default=200, help="DPI for saved image")
-    parser.add_argument("--live", action="store_true",
-                        help="Live mode — re-render periodically")
-    parser.add_argument("--refresh", type=float, default=5.0,
-                        help="Refresh interval in seconds for live mode")
+    parser.add_argument(
+        "--live", action="store_true", help="Live mode — re-render periodically"
+    )
+    parser.add_argument(
+        "--refresh",
+        type=float,
+        default=5.0,
+        help="Refresh interval in seconds for live mode",
+    )
 
     args = parser.parse_args()
 

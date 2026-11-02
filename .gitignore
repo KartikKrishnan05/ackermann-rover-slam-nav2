@@ -59,3 +59,12 @@ CATKIN_IGNORE
 .vscode/browse.vc.db-shm
 .vscode/browse.vc.db-wal
 .vscode/c_cpp_properties.json
+
+
+.claude
+
+# macOS
+.DS_Store
+
+# Large presentation videos (kept locally only)
+VideosForPresentation/

@@ -16,11 +16,12 @@ Arguments:
     publish_map_tf: Boolean to enable/disable the static map->odom transform.
 """
 
-from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -45,24 +46,18 @@ def generate_launch_description() -> LaunchDescription:
     bridge_arguments = [
         # Velocity Command (ROS -> Gazebo)
         "/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist",
-
         # Odometry (Gazebo -> ROS)
         "/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry",
-
         # TF / Pose (Gazebo -> ROS)
         "/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
         "/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
-
         # Clock (Gazebo -> ROS)
         "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
-
         # Joint States (Gazebo -> ROS)
         "/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model",
-
         # Lidar (Gazebo -> ROS)
         "/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan",
         "/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
-
         # IMU (Gazebo -> ROS)
         "/imu@sensor_msgs/msg/Imu[gz.msgs.IMU",
     ]

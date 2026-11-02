@@ -7,11 +7,12 @@ Manages the lifecycle and configuration of the input nodes.
 import os
 
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 
 def generate_launch_description():
@@ -34,9 +35,7 @@ def generate_launch_description():
         executable="teleop_joystick",
         name="joystick_teleop",
         parameters=[config_file],
-        condition=IfCondition(
-            PythonExpression(["'", teleop_mode, "' == 'joystick'"])
-        ),
+        condition=IfCondition(PythonExpression(["'", teleop_mode, "' == 'joystick'"])),
     )
 
     keyboard_node = Node(
@@ -45,11 +44,7 @@ def generate_launch_description():
         name="keyboard_teleop",
         parameters=[config_file],
         prefix="xterm -e",
-        condition=IfCondition(
-            PythonExpression(["'", teleop_mode, "' == 'keyboard'"])
-        ),
+        condition=IfCondition(PythonExpression(["'", teleop_mode, "' == 'keyboard'"])),
     )
 
-    return LaunchDescription(
-        [declare_mode_arg, joystick_node, keyboard_node]
-    )
+    return LaunchDescription([declare_mode_arg, joystick_node, keyboard_node])

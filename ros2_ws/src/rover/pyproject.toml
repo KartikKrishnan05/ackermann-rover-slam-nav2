@@ -1,0 +1,40 @@
+# Tooling configuration for the rover package.
+# Only [tool.*] tables are defined here so colcon/ament_python keeps using setup.py.
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.pylint.main]
+# ROS 2 / numpy / scipy are not always importable in linting environments.
+ignored-modules = [
+    "rclpy",
+    "geometry_msgs",
+    "nav_msgs",
+    "std_msgs",
+    "action_msgs",
+    "nav2_msgs",
+    "tf2_ros",
+    "sensor_msgs",
+    "numpy",
+    "scipy",
+    "cv2",
+    "board",
+    "busio",
+    "adafruit_servokit",
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "import-error",
+]

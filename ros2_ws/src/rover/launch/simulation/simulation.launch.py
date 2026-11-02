@@ -29,11 +29,10 @@ import os
 # -------------------------------------------------------------------------
 # ROS 2 and launch imports
 # -------------------------------------------------------------------------
-from ament_index_python.packages import (
+from ament_index_python.packages import (  # noqa: E402
     get_package_prefix,
     get_package_share_directory,
-)  # noqa: E402
-from launch import LaunchDescription
+)
 from launch.actions import (
     DeclareLaunchArgument,
     ExecuteProcess,
@@ -44,6 +43,8 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -84,9 +85,7 @@ def generate_launch_description() -> LaunchDescription:
     slam_config_file = os.path.join(
         pkg_rover, "config", "mapper_params_online_async.yaml"
     )
-    default_rviz_config_path = os.path.join(
-        pkg_rover, "rviz", "my_rviz_config.rviz"
-    )
+    default_rviz_config_path = os.path.join(pkg_rover, "rviz", "my_rviz_config.rviz")
 
     # -----------------------------------------------------------------
     # Set environment variables required by Gazebo
@@ -138,11 +137,16 @@ def generate_launch_description() -> LaunchDescription:
         executable="create",
         output="screen",
         arguments=[
-            "-name", "rover",
-            "-topic", "robot_description",   # URDF is read from this topic
-            "-x", "-5.0",
-            "-y", "2.0",
-            "-z", "0.2",
+            "-name",
+            "rover",
+            "-topic",
+            "robot_description",  # URDF is read from this topic
+            "-x",
+            "-5.0",
+            "-y",
+            "2.0",
+            "-z",
+            "0.2",
         ],
     )
 

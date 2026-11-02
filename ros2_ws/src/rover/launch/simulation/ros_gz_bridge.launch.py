@@ -22,11 +22,13 @@ ros2 launch rover ros_gz_bridge.launch.py
 - use_sim_time:=true
 - publish_map_tf:=false
 """
-from launch.conditions import IfCondition
-from launch import LaunchDescription
+
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -109,13 +111,13 @@ def generate_launch_description() -> LaunchDescription:
         name="static_transform_publisher",
         output="log",
         arguments=[
-            "0.0",   # x-translation
-            "0.0",   # y-translation
-            "0.0",   # z-translation
-            "0.0",   # roll
-            "0.0",   # pitch
-            "0.0",   # yaw
-            "map",   # parent frame
+            "0.0",  # x-translation
+            "0.0",  # y-translation
+            "0.0",  # z-translation
+            "0.0",  # roll
+            "0.0",  # pitch
+            "0.0",  # yaw
+            "map",  # parent frame
             "odom",  # child frame
         ],
         condition=IfCondition(publish_map_tf),  # launch only if true
@@ -138,7 +140,7 @@ def generate_launch_description() -> LaunchDescription:
                 description="Publish static map->odom TF.",
             ),
             # ----- Core nodes ------------------------------------------------
-            bridge,          # ROS ↔ Gazebo bridge
-            map_static_tf,   # Optional static transform
+            bridge,  # ROS ↔ Gazebo bridge
+            map_static_tf,  # Optional static transform
         ]
     )

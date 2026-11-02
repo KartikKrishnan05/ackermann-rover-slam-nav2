@@ -46,10 +46,7 @@ STEER_CENTER = 1900.0
 try:
     DEVICE = Device(I2C_ADDRESS, I2C_BUS_NUMBER)
     DEVICE.set_pwm_frequency(50)
-    print(
-        f"Connected to PCA9685 at {hex(I2C_ADDRESS)} "
-        f"on Bus {I2C_BUS_NUMBER}"
-    )
+    print(f"Connected to PCA9685 at {hex(I2C_ADDRESS)} " f"on Bus {I2C_BUS_NUMBER}")
 except (OSError, IOError) as err:
     print(f"Hardware Error: {err}")
     sys.exit(1)
